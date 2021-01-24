@@ -25,8 +25,13 @@
     // }
     "local-history.enabled": 0,
     "cSpell.words": [
+        "bad",
         "lang",
+        "lerr",
         "lispy",
-        "mpca"
+        "lval",
+        "mpca",
+        "num",
+        "println"
     ]
 }
