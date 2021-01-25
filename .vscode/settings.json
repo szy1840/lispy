@@ -29,18 +29,11 @@
         "lang",
         "lerr",
         "lispy",
-<<<<<<< HEAD
-        "lval",
-        "mpca",
-        "num",
-        "println"
-=======
         "mpca"
         "lval",
         "mpca",
         "num",
         "println",
         "sexpr"
->>>>>>> develop
     ]
 }
