@@ -95,7 +95,7 @@ lval* lval_read_num(mpc_ast_t* t){
 
 lval* lval_add(lval* v,lval* x){
     v->count++;
-    v->cell=realloc(v->cell,sizeof(lval*) * v->count);
+    v->cell=realloc(v->cell,sizeof(lval*) * (v->count));
     v->cell[v->count-1]=x;
     return v;
 }
@@ -137,7 +137,7 @@ void lval_expr_print(lval* v,char open, char close){
     {
         lval_print(v->cell[i]);
         /* avoid print trailing space if it's the last one */
-        if(i!=v->count-1) putchar(' ');
+        if(i!=(v->count-1)) putchar(' ');
     }
     
     putchar(close);
@@ -167,11 +167,11 @@ void lval_println(lval* v){
 int main(int argc, char **argv)
 {
     /* create some parsers */
-    mpc_parser_t *Number = mpc_new("number");
-    mpc_parser_t *Symbol = mpc_new("symbol");
-    mpc_parser_t *Sexpr = mpc_new("sexpr");
-    mpc_parser_t *Expr = mpc_new("expr");
-    mpc_parser_t *Lispy = mpc_new("lispy");
+    mpc_parser_t* Number = mpc_new("number");
+    mpc_parser_t* Symbol = mpc_new("symbol");
+    mpc_parser_t* Sexpr = mpc_new("sexpr");
+    mpc_parser_t* Expr = mpc_new("expr");
+    mpc_parser_t* Lispy = mpc_new("lispy");
 
     /* define them with the following language */
     mpca_lang(MPCA_LANG_DEFAULT,
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
         symbol:     '+' | '-' | '*' | '/' ;                 \
         sexpr:      '(' <expr>* ')' ;                       \
         expr:       <number> | <symbol> | <sexpr>;          \
-        lispy:      /^/ <operator> <expr>* /$/ ;            \
+        lispy:      /^/ <expr>* /$/ ;                       \
     ",
     Number, Symbol, Sexpr, Expr, Lispy);
     puts("Lispy Version 0.0.1");

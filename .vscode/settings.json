@@ -23,18 +23,15 @@
               
     //     "editorBracketMatch.background": "#9bfcab"  //括號的背景色 'you can set other color'
     // }
-    "local-history.daysLimit": 15,
+    "local-history.enabled": 0,
     "cSpell.words": [
         "lang",
         "lispy",
-<<<<<<< Updated upstream
         "mpca"
-=======
         "lval",
         "mpca",
         "num",
         "println",
         "sexpr"
->>>>>>> Stashed changes
     ]
 }
