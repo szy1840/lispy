@@ -27,6 +27,14 @@
     "cSpell.words": [
         "lang",
         "lispy",
+<<<<<<< Updated upstream
         "mpca"
+=======
+        "lval",
+        "mpca",
+        "num",
+        "println",
+        "sexpr"
+>>>>>>> Stashed changes
     ]
 }
