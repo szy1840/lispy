@@ -32,6 +32,7 @@
         "mpca",
         "num",
         "println",
-        "sexpr"
+        "sexpr",
+        "qexpr"
     ]
 }
