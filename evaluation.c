@@ -1,6 +1,10 @@
 #include "mpc.h"
-#define LASSERT(args,cond,err) \
-    if(!(cond)) {lval_del(args); return lval_err(err);}
+#define LASSERT(args,cond,fmt,...) \
+    if(!(cond)) {\
+        lval* err=lval_err(fmt,##__VA_ARGS__);\
+        lval_del(args);\
+        return err;\
+    }
 #ifdef _WIN32
 
 static char buffer[2048];
@@ -48,7 +52,18 @@ void lval_print(lval* v);
 lval* lval_eval(lenv* e,lval* v);
 lval* builtin(lenv* e,lval* a, char* func);
 
-
+/* return name */
+char* ltype_name(int t){
+    switch(t){
+        case LVAL_FUN: return "Function";
+        case LVAL_NUM: return "Number";
+        case LVAL_ERR: return "Error";
+        case LVAL_SYM: return "Symbol";
+        case LVAL_SEXPR: return "S-Expression";
+        case LVAL_QEXPR: return "Q-Expression";
+        default: return "Unknown";
+    }
+}
 /* construct lenv */
 lenv* lenv_new(){
     lenv* e=malloc(sizeof(lenv));
@@ -65,11 +80,17 @@ lval* lval_num(long x){
     return v;
 }
 /* construct a pointer to a new error type lval */
-lval* lval_err(char* m){
+lval* lval_err(char* fmt,...){
     lval* v=malloc(sizeof(lval));
     v->type=LVAL_ERR;
-    v->err=malloc(strlen(m)+1);
-    strcpy(v->err,m);
+
+    va_list va;
+    /* initialize va with the last named argument */
+    va_start(va,fmt);
+    v->err=malloc(512);
+    vsnprintf(v->err,511,fmt,va);
+    v->err=realloc(v->err,strlen(v->err)+1);
+    va_end(va);
     return v;
 }
 /* construct a pointer to a new symbol type lval */
@@ -222,7 +243,6 @@ void lval_print(lval* v){
             break;
     }
 }
-
 void lval_println(lval* v){
     lval_print(v);
     putchar('\n');
@@ -287,7 +307,7 @@ lval* lenv_get(lenv* e,lval* k){
             return lval_copy(e->vals[i]);
         }
     }
-    return lval_err("Unbound symbol!");
+    return lval_err("Unbound symbol '%s'",k->sym);
 }
 void lenv_put(lenv* e,lval* k,lval* v){
     for (int i = 0; i < e->count; i++)
@@ -337,7 +357,6 @@ lval* lval_eval_sexpr(lenv* e,lval* v){
     lval_del(f);
     return result;
 }
-
 lval* lval_eval(lenv* e,lval* v){
     if(v->type==LVAL_SYM){
         lval* x=lenv_get(e,v);
@@ -354,10 +373,10 @@ lval* lval_eval(lenv* e,lval* v){
 lval* builtin_op(lenv* e,lval* a,char* op){
     for (int i = 0; i < a->count; i++)
     {
-        if(a->cell[i]->type!=LVAL_NUM){
-            lval_del(a);
-            return lval_err("Cannot operate on non-number!");
-        }
+        LASSERT(a,a->cell[i]->type==LVAL_NUM,
+        "Function '%s' passed incorrect type for argument %d."
+        "Got %s,Expected %s.",op,i+1,ltype_name(a->cell[i]->type),
+        ltype_name(LVAL_NUM));
     }
     
     lval* x=lval_pop(a,0);
@@ -400,9 +419,12 @@ lval* builtin_div(lenv* e,lval* a){
 
 lval* builtin_head(lenv* e,lval* a){
     LASSERT(a,a->count==1,
-    "Function 'head' passed too many arguments!");
+    "Function 'head' passed too many arguments:"
+    "Got %d,Expected %d.",a->count,1);
     LASSERT(a,a->cell[0]->type==LVAL_QEXPR,
-    "Function 'head' passed incorrect type!");
+    "Function 'head' passed incorrect type:"
+    "Got %s,Expected %s.",ltype_name(a->cell[0]->type),
+    ltype_name(LVAL_QEXPR));
     LASSERT(a,a->cell[0]->count!=0,
     "Function 'head' passed {}!");
 
@@ -414,9 +436,12 @@ lval* builtin_head(lenv* e,lval* a){
 }
 lval* builtin_tail(lenv* e,lval* a){
     LASSERT(a,a->count==1,
-    "Function 'tail' passed too many arguments!");
+    "Function 'tail' passed too many arguments:"
+    "Got %d,Expected %d.",a->count,1);
     LASSERT(a,a->cell[0]->type==LVAL_QEXPR,
-    "Function 'tail' passed incorrect type!");
+    "Function 'tail' passed incorrect type:"
+    "Got %s,Expected %s.",ltype_name(a->cell[0]->type),
+    ltype_name(LVAL_QEXPR));
     LASSERT(a,a->cell[0]->count!=0,
     "Function 'tail' passed {}!");
 
@@ -430,9 +455,12 @@ lval* builtin_list(lenv* e,lval* a){
 }
 lval* builtin_eval(lenv* e,lval* a){
     LASSERT(a,a->count==1,
-    "Function 'eval' passed too many arguments!");
+    "Function 'eval' passed too many arguments:"
+    "Got %d,Expected %d.",a->count,1);
     LASSERT(a,a->cell[0]->type==LVAL_QEXPR,
-    "Function 'eval' passed incorrect type!");
+    "Function 'eval' passed incorrect type:"
+    "Got %s,Expected %s.",ltype_name(a->cell[0]->type),
+    ltype_name(LVAL_QEXPR));
     
     lval* x=lval_take(a,0);
     x->type=LVAL_SEXPR;
@@ -449,7 +477,9 @@ lval* builtin_join(lenv* e,lval* a){
     for (int i = 0; i < a->count; i++)
     {
         LASSERT(a,a->cell[i]->type==LVAL_QEXPR,
-        "Function 'join' passed incorrect type!");
+        "Function 'join' passed incorrect type:"
+        "Got %s,Expected %s.",ltype_name(a->cell[i]->type),
+        ltype_name(LVAL_QEXPR));
     }
     lval* x=lval_pop(a,0);
     while(a->count){
@@ -469,6 +499,33 @@ lval* builtin(lenv* e,lval* a, char* func){
 
     lval_del(a);
     return lval_err("Unknown Function!");
+}
+
+/* define */
+lval* builtin_def(lenv* e,lval* a){
+    LASSERT(a,a->cell[0]->type==LVAL_QEXPR,
+    "Function 'def' passed incorrect type:"
+    "Got %s,Expected %s.",ltype_name(a->cell[0]->type),
+    ltype_name(LVAL_QEXPR));
+
+    lval* syms=a->cell[0];
+    for (int i = 0; i < syms->count; i++){
+        LASSERT(a,syms->cell[i]->type==LVAL_SYM,
+        "Function 'def' cannot define non-symbol:"
+        "Got %s,Expected %s.",ltype_name(syms->cell[i]->type),
+        ltype_name(LVAL_SYM));
+    }
+    LASSERT(a,syms->count==a->count-1,
+    "Function 'def' cannot define incorrect "
+    "number of values to symbols:"
+    "Got %d,Expected %d.",a->count-1,syms->count);
+    
+    for (int i = 0; i < syms->count; i++){
+        lenv_put(e,syms->cell[i],a->cell[i+1]);
+    }
+    
+    lval_del(a);
+    return lval_sexpr();
 }
 
 /* register builtins with environment */
@@ -492,7 +549,10 @@ void lenv_add_builtins(lenv* e){
     lenv_add_builtin(e,"-",builtin_sub);
     lenv_add_builtin(e,"*",builtin_mul);
     lenv_add_builtin(e,"/",builtin_div);
+    /* variable functions */
+    lenv_add_builtin(e,"def",builtin_def);
 }
+
 int main(int argc, char **argv)
 {
     /* create some parsers */
@@ -503,7 +563,7 @@ int main(int argc, char **argv)
     mpc_parser_t* Expr = mpc_new("expr");
     mpc_parser_t* Lispy = mpc_new("lispy");
 
-    /* define them with the following language */
+
     mpca_lang(MPCA_LANG_DEFAULT,
     "                                                           \
         number:     /-?[0-9]+/ ;                                \
