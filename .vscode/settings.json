@@ -16,6 +16,7 @@
         "ltype",
         "lval",
         "mpca",
+        "nsym",
         "num",
         "println",
         "qexpr",
