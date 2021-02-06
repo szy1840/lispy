@@ -10,6 +10,7 @@
     "local-history.enabled": 0,
     "cSpell.words": [
         "bad",
+        "escape",
         "lang",
         "lerr",
         "lbuiltin",
@@ -18,9 +19,13 @@
         "ltype",
         "lval",
         "mpca",
+        "mpcf",
+        "nsym",
         "num",
         "println",
         "qexpr",
-        "sexpr"
+        "sexpr",
+        "uncurried",
+        "uncurry"
     ]
 }
