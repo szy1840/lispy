@@ -1,2 +1,2 @@
-# My_Lisp
-follow the tutorial *Build Your Own Lisp*
+# Lispy
+Built by following the *Build Your Own Lisp*  tutorial.
